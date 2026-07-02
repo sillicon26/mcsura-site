@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>McSuRa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --white: #ffffff;
+      --dim: rgba(255,255,255,0.55);
+      --faint: rgba(255,255,255,0.12);
+      --gold: #c9922a;
+      --blue: #4a9edd;
+      --bg: #04080f;
+      --line: rgba(255,255,255,0.08);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── CANVAS ── */
+    #canvas-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 48px;
+      border-bottom: 1px solid transparent;
+      transition: border-color .4s, background .4s, backdrop-filter .4s;
+    }
+    nav.scrolled {
+      border-color: var(--line);
+      background: rgba(4,8,15,0.7);
+      backdrop-filter: blur(18px);
+    }
+    .nav-logo img {
+      height: 32px;
+      object-fit: contain;
+      filter: brightness(1.1);
+    }
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--dim);
+      text-decoration: none;
+      font-size: 12px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-weight: 500;
+      transition: color .25s;
+    }
+    .nav-links a:hover { color: var(--white); }
+    .nav-cta {
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--white);
+      background: none;
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 9px 20px;
+      cursor: pointer;
+      transition: border-color .25s, background .25s;
+      font-family: 'Inter', sans-serif;
+    }
+    .nav-cta:hover { border-color: var(--white); background: rgba(255,255,255,0.05); }
+
+    /* ── SECTIONS ── */
+    section { position: relative; z-index: 1; }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+    }
+    .hero-eyebrow {
+      font-size: 10px;
+      letter-spacing: .25em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: fadeUp .8s .3s forwards;
+    }
+    .hero-logo {
+      width: min(440px, 80vw);
+      margin-bottom: 36px;
+      opacity: 0;
+      animation: fadeUp .9s .5s forwards;
+      filter: drop-shadow(0 0 60px rgba(74,158,221,0.18));
+    }
+    .hero-tagline {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(13px, 1.5vw, 15px);
+      letter-spacing: .35em;
+      text-transform: uppercase;
+      color: var(--dim);
+      font-weight: 300;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeUp .8s .7s forwards;
+    }
+    .hero-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 56px;
+      opacity: 0;
+      animation: fadeUp .8s .85s forwards;
+    }
+    .hero-sub span { color: var(--gold); }
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      opacity: 0;
+      animation: fadeUp .8s 1s forwards;
+    }
+    .btn-primary {
+      background: var(--white);
+      color: var(--bg);
+      border: none;
+      padding: 13px 32px;
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: opacity .25s;
+    }
+    .btn-primary:hover { opacity: .85; }
+    .btn-ghost {
+      background: none;
+      color: var(--dim);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 13px 32px;
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: color .25s, border-color .25s;
+    }
+    .btn-ghost:hover { color: var(--white); border-color: rgba(255,255,255,0.5); }
+    .scroll-hint {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      animation: fadeUp .6s 1.4s forwards;
+    }
+    .scroll-hint span {
+      font-size: 9px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.25);
+    }
+    .scroll-line {
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+      animation: scrollPulse 2s 2s infinite;
+    }
+
+    /* ── STATS STRIP ── */
+    .stats-strip {
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 40px 0;
+      display: flex;
+      justify-content: center;
+    }
+    .stats-inner {
+      display: flex;
+      gap: 0;
+      width: 100%;
+      max-width: 960px;
+    }
+    .stat-item {
+      flex: 1;
+      text-align: center;
+      padding: 0 24px;
+      border-right: 1px solid var(--line);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 36px;
+      font-weight: 600;
+      letter-spacing: -.02em;
+      margin-bottom: 6px;
+    }
+    .stat-num .accent { color: var(--gold); }
+    .stat-label {
+      font-size: 10px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    /* ── DIVISIONS ── */
+    .section-header {
+      text-align: center;
+      padding: 110px 24px 70px;
+    }
+    .section-eyebrow {
+      font-size: 10px;
+      letter-spacing: .25em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 18px;
+    }
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 500;
+      letter-spacing: -.02em;
+      line-height: 1.1;
+      margin-bottom: 18px;
+    }
+    .section-desc {
+      font-size: 14px;
+      color: var(--dim);
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.7;
+      letter-spacing: .02em;
+    }
+
+    .divisions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--line);
+      max-width: 1100px;
+      margin: 0 auto 110px;
+    }
+    .division-card {
+      background: var(--bg);
+      padding: 52px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: background .3s;
+    }
+    .division-card:hover { background: rgba(255,255,255,0.03); }
+    .div-icon {
+      width: 36px;
+      height: 36px;
+      margin-bottom: 8px;
+    }
+    .div-tag {
+      font-size: 9px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--blue);
+      font-weight: 500;
+    }
+    .div-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: -.01em;
+    }
+    .div-name .gold { color: var(--gold); }
+    .div-desc {
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.7;
+      flex: 1;
+    }
+    .div-link {
+      font-size: 10px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--dim);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      transition: color .25s;
+    }
+    .div-link:hover { color: var(--white); }
+    .div-link::after { content: '→'; }
+
+    /* ── MARQUEE ── */
+    .marquee-wrap {
+      overflow: hidden;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 18px 0;
+      margin-bottom: 110px;
+    }
+    .marquee-track {
+      display: flex;
+      gap: 64px;
+      animation: marquee 24s linear infinite;
+      white-space: nowrap;
+    }
+    .marquee-item {
+      font-size: 11px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.2);
+      flex-shrink: 0;
+    }
+    .marquee-item span { color: var(--gold); }
+
+    /* ── MISSION ── */
+    #mission {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px 110px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .mission-label {
+      font-size: 10px;
+      letter-spacing: .25em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 24px;
+    }
+    .mission-headline {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(28px, 3.5vw, 42px);
+      font-weight: 500;
+      letter-spacing: -.02em;
+      line-height: 1.1;
+      margin-bottom: 28px;
+    }
+    .mission-body {
+      font-size: 14px;
+      color: var(--dim);
+      line-height: 1.8;
+      margin-bottom: 36px;
+    }
+    .mission-visual {
+      position: relative;
+      aspect-ratio: 1;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+    #orbit-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── ELEMENTS (Moscovium / Sumairium / Radium) ── */
+    .elements-section {
+      padding: 0 24px 110px;
+    }
+    .elements-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .element-card {
+      border: 1px solid var(--line);
+      padding: 40px 32px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .3s;
+    }
+    .element-card:hover { border-color: rgba(255,255,255,0.2); }
+    .element-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity .4s;
+    }
+    .element-card:nth-child(1)::before { background: radial-gradient(circle at 0 0, rgba(74,158,221,0.06) 0%, transparent 60%); }
+    .element-card:nth-child(2)::before { background: radial-gradient(circle at 50% 0, rgba(255,255,255,0.04) 0%, transparent 60%); }
+    .element-card:nth-child(3)::before { background: radial-gradient(circle at 100% 0, rgba(201,146,42,0.06) 0%, transparent 60%); }
+    .element-card:hover::before { opacity: 1; }
+    .element-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 64px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -.04em;
+      opacity: .07;
+      margin-bottom: -20px;
+    }
+    .element-symbol {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 42px;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      margin-bottom: 4px;
+    }
+    .element-card:nth-child(1) .element-symbol { color: var(--blue); }
+    .element-card:nth-child(3) .element-symbol { color: var(--gold); }
+    .element-name {
+      font-size: 10px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 24px;
+    }
+    .element-text {
+      font-size: 13px;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.75;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 52px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer-logo img { height: 24px; opacity: .6; filter: brightness(1.1); }
+    .footer-copy {
+      font-size: 11px;
+      color: rgba(255,255,255,0.2);
+      letter-spacing: .08em;
+    }
+    .footer-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+    .footer-links a {
+      font-size: 11px;
+      color: rgba(255,255,255,0.25);
+      text-decoration: none;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      transition: color .25s;
+    }
+    .footer-links a:hover { color: rgba(255,255,255,0.6); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 1; transform: scaleY(1); }
+      50% { opacity: .3; transform: scaleY(.6); }
+    }
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .8s ease, transform .8s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 800px) {
+      nav { padding: 18px 24px; }
+      .nav-links { display: none; }
+      .divisions-grid { grid-template-columns: 1fr; }
+      .elements-grid { grid-template-columns: 1fr; }
+      #mission { grid-template-columns: 1fr; gap: 40px; }
+      .stats-inner { flex-wrap: wrap; }
+      .stat-item { border-right: none; border-bottom: 1px solid var(--line); padding: 20px; }
+      footer { flex-direction: column; gap: 24px; text-align: center; }
+      .footer-links { flex-wrap: wrap; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Star field canvas -->
+<canvas id="canvas-bg"></canvas>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo"><img src="McSuRa_Logo.png" alt="McSuRa" /></div>
+  <ul class="nav-links">
+    <li><a href="#divisions">Divisions</a></li>
+    <li><a href="#mission">Mission</a></li>
+    <li><a href="#elements">Elements</a></li>
+    <!-- <li><a href="#contact">Contact</a></li> -->
+  </ul>
+  <!-- <button class="nav-cta">Join the Mission</button> -->
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <p class="hero-eyebrow">Moscovium · Sumairium · Radium</p>
+  <img src="McSuRa_Logo.png" alt="McSuRa" class="hero-logo" />
+  <p class="hero-tagline">Pioneering Beyond Orbits</p>
+  <p class="hero-sub">Aerospace &nbsp;·&nbsp; Automotive &nbsp;·&nbsp; <span>Advanced Systems</span></p>
+  <div class="hero-buttons">
+    <!--
+    <button class="btn-primary">Explore Our Work</button>
+    <button class="btn-ghost">Learn More</button>
+    -->
+  </div>
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-strip">
+  <div class="stats-inner">
+    <div class="stat-item reveal">
+      <div class="stat-num">3<span class="accent">+</span></div>
+      <div class="stat-label">Core Divisions</div>
+    </div>
+    <div class="stat-item reveal">
+      <div class="stat-num">∞</div>
+      <div class="stat-label">Orbits Ahead</div>
+    </div>
+    <div class="stat-item reveal">
+      <div class="stat-num">01</div>
+      <div class="stat-label">Unified Vision</div>
+    </div>
+    <div class="stat-item reveal">
+      <div class="stat-num">⌀<span class="accent">0</span></div>
+      <div class="stat-label">Limits Accepted</div>
+    </div>
+  </div>
+</div>
+
+<!-- DIVISIONS -->
+<section id="divisions">
+  <div class="section-header reveal">
+    <p class="section-eyebrow">What We Build</p>
+    <h2 class="section-title">Two frontiers.<br/>One Culture.</h2>
+    <p class="section-desc">McSuRa operates at the intersection of aerospace engineering and high-performance automotive design — pushing boundaries in both.</p>
+  </div>
+
+  <div class="divisions-grid">
+    <div class="division-card reveal">
+      <svg class="div-icon" viewBox="0 0 36 36" fill="none">
+        <path d="M18 4L22 14H32L24 20L27 30L18 24L9 30L12 20L4 14H14L18 4Z" stroke="#4a9edd" stroke-width="1.2" fill="none"/>
+      </svg>
+      <span class="div-tag">Division I</span>
+      <div class="div-name">Aerospace</div>
+      <p class="div-desc">Designing propulsion systems, commercial aircraft, and next-generation spacecraft that challenge the limits of what humanity can reach.</p>
+      <!--<a href="#" class="div-link">Explore Aerospace</a>-->
+    </div>
+    <div class="division-card reveal">
+      <svg class="div-icon" viewBox="0 0 36 36" fill="none">
+        <circle cx="18" cy="18" r="12" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+        <circle cx="18" cy="18" r="4" stroke="rgba(255,255,255,0.6)" stroke-width="1.2"/>
+        <line x1="18" y1="4" x2="18" y2="10" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+        <line x1="18" y1="26" x2="18" y2="32" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+        <line x1="4" y1="18" x2="10" y2="18" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+        <line x1="26" y1="18" x2="32" y2="18" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+      </svg>
+      <span class="div-tag">Division II</span>
+      <div class="div-name">Automotive</div>
+      <p class="div-desc">Engineering high-performance world-class Le Mans Hypercars that inherit aerospace precision — built for speed, efficiency, and the road not yet driven.</p>
+      <!--<a href="#" class="div-link">Explore Automotive</a>-->
+    </div>
+    <div class="division-card reveal">
+      <svg class="div-icon" viewBox="0 0 36 36" fill="none">
+        <polygon points="18,3 33,30 3,30" stroke="#c9922a" stroke-width="1.2" fill="none"/>
+        <line x1="18" y1="12" x2="18" y2="22" stroke="#c9922a" stroke-width="1.2"/>
+        <circle cx="18" cy="25" r="1.2" fill="#c9922a"/>
+      </svg>
+      <span class="div-tag">R&D</span>
+      <div class="div-name">Advanced <span class="gold">Systems</span></div>
+      <p class="div-desc">Bridging both worlds through materials science, and proprietary element research at the McSuRa labs.</p>
+      <!--<a href="#" class="div-link">Explore R&D</a>-->
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span class="marquee-item">Aerospace</span>
+    <span class="marquee-item"><span>◆</span></span>
+    <span class="marquee-item">Automotive</span>
+    <span class="marquee-item"><span>◆</span></span>
+    <span class="marquee-item">Pioneering Beyond Orbits</span>
+    <span class="marquee-item"><span>◆</span></span>
+    <span class="marquee-item">McSuRa</span>
+    <span class="marquee-item"><span>◆</span></span>
+    <span class="marquee-item">Advanced Systems</span>
+    <span class="marquee-item"><span>◆</span></span>
+    <span class="marquee-item">Moscovium · Sumairium · Radium</span>
+    <span class="marquee-item"><span>◆</span></span>
+    <!-- duplicate for seamless loop -->
+    <span class="marquee-item">Aerospace</span>
+    <span class="marquee-item"><span>◆</span></span>
+    <span class="marquee-item">Automotive</span>
+    <span class="marquee-item"><span>◆</span></span>
+    <span class="marquee-item">Pioneering Beyond Orbits</span>
+    <span class="marquee-item"><span>◆</span></span>
+    <span class="marquee-item">McSuRa</span>
+    <span class="marquee-item"><span>◆</span></span>
+    <span class="marquee-item">Advanced Systems</span>
+    <span class="marquee-item"><span>◆</span></span>
+    <span class="marquee-item">Moscovium · Sumairium · Radium</span>
+    <span class="marquee-item"><span>◆</span></span>
+  </div>
+</div>
+
+<!-- MISSION -->
+<section id="mission">
+  <div class="mission-text reveal">
+    <p class="mission-label">Long Story Short</p>
+    <h2 class="mission-headline">Engineering the fastest, farthest, mankind has ever seen</h2>
+    <p class="mission-body">A culture you can feel.</p>
+    <!--<button class="btn-ghost">Read Our Story</button>-->
+  </div>
+  <div class="mission-visual reveal">
+    <canvas id="orbit-canvas"></canvas>
+  </div>
+</section>
+
+<!-- ELEMENTS -->
+<section id="elements" class="elements-section">
+  <div class="section-header reveal">
+    <p class="section-eyebrow">The Entities behind</p>
+    <h2 class="section-title">Named for the inspirers<br/>Built upon them</h2>
+  </div>
+  <div class="elements-grid">
+    <div class="element-card reveal">
+      <div class="element-num">115</div>
+      <div class="element-symbol">Mc</div>
+      <div class="element-name">Moscovium</div>
+      <p class="element-text">The structural backbone of McSuRa's philosophy — rare, resilient, and engineered for the extreme.</p>
+    </div>
+    <div class="element-card reveal">
+      <div class="element-num">119</div>
+      <div class="element-symbol">Su</div>
+      <div class="element-name">Sumairium</div>
+      <p class="element-text">A proprietary element of success and brilliance.</p>
+    </div>
+    <div class="element-card reveal">
+      <div class="element-num">88</div>
+      <div class="element-symbol">Ra</div>
+      <div class="element-name">Radium</div>
+      <p class="element-text">An entity of transcendence, igniting the flames of innovation.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer id="contact">
+  <div class="footer-logo"><img src="McSuRa_Logo.png" alt="McSuRa" /></div>
+  <p class="footer-copy">© 2026 McSuRa Corporation. All rights reserved.</p>
+  <ul class="footer-links">
+    
+    <button style="background-color: pink; color: blue; padding: 10px ; font-family: 'Roboto', sans-serif">Made by the People who carry Moscovium.
+      <br>
+      Made from 310 chits, 54 papers, 122 pen taken, and 1 with.
+      <br>
+      All on the grounds, watching a game of badminton. 
+    </button> 
+    
+    <!--<li><a href="#">Contact</a></li>
+    <!--<li><a href="#">Legal</a></li>-->
+  </ul>
+</footer>
+
+<script>
+// ── STAR FIELD ──
+(function() {
+  const canvas = document.getElementById('canvas-bg');
+  const ctx = canvas.getContext('2d');
+  let W, H, stars = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function initStars(count = 260) {
+    stars = [];
+    for (let i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.1,
+        a: Math.random(),
+        speed: 0.0002 + Math.random() * 0.0003
+      });
+    }
+  }
+
+  function drawStars(t) {
+    ctx.clearRect(0, 0, W, H);
+    for (const s of stars) {
+      const alpha = 0.2 + 0.5 * (0.5 + 0.5 * Math.sin(t * s.speed * 1000 + s.a * 100));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,215,255,${alpha})`;
+      ctx.fill();
+    }
+  }
+
+  let t0 = null;
+  function loop(ts) {
+    if (!t0) t0 = ts;
+    drawStars((ts - t0) / 1000);
+    requestAnimationFrame(loop);
+  }
+
+  resize();
+  initStars();
+  requestAnimationFrame(loop);
+  window.addEventListener('resize', () => { resize(); initStars(); });
+})();
+
+// ── ORBIT CANVAS ──
+(function() {
+  const canvas = document.getElementById('orbit-canvas');
+  const ctx = canvas.getContext('2d');
+  let size;
+
+  function resize() {
+    const parent = canvas.parentElement;
+    size = parent.offsetWidth;
+    canvas.width = size;
+    canvas.height = size;
+  }
+
+  const orbits = [
+    { r: 0.18, speed: 1.8, color: '#4a9edd', dotR: 3, trail: 0.6 },
+    { r: 0.28, speed: 1.1, color: 'rgba(255,255,255,0.6)', dotR: 2.5, trail: 0.5 },
+    { r: 0.38, speed: 0.65, color: '#c9922a', dotR: 4, trail: 0.7 },
+  ];
+  let angles = orbits.map(() => Math.random() * Math.PI * 2);
+
+  function draw(ts) {
+    const cx = size / 2, cy = size / 2;
+    ctx.clearRect(0, 0, size, size);
+
+    // subtle center glow
+    const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.18);
+    grd.addColorStop(0, 'rgba(74,158,221,0.12)');
+    grd.addColorStop(1, 'transparent');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(cx, cy, size * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+
+    // center body
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fill();
+
+    const t = ts / 1000;
+    orbits.forEach((o, i) => {
+      const rad = size * o.r;
+      // draw orbit ring
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rad, rad * 0.32, -0.3, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // planet position
+      angles[i] = t * o.speed;
+      const px = cx + rad * Math.cos(angles[i]);
+      const py = cy + rad * 0.32 * Math.sin(angles[i]);
+
+      // glow
+      const g = ctx.createRadialGradient(px, py, 0, px, py, o.dotR * 4);
+      g.addColorStop(0, o.color.replace(')', ',0.4)').replace('rgba','rgba').replace('rgb(','rgba('));
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(px, py, o.dotR * 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // dot
+      ctx.beginPath();
+      ctx.arc(px, py, o.dotR, 0, Math.PI * 2);
+      ctx.fillStyle = o.color;
+      ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  requestAnimationFrame(draw);
+  window.addEventListener('resize', resize);
+})();
+
+// ── NAV SCROLL ──
+window.addEventListener('scroll', () => {
+  document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 40);
+});
+
+// ── REVEAL ON SCROLL ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
